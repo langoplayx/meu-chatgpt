@@ -1,7 +1,5 @@
 import streamlit as st
 import openai
-
-# Defina sua API Key
 openai.api_key = "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"
 
 st.set_page_config(page_title="ChatGPT Simples", page_icon="💬", layout="wide")
