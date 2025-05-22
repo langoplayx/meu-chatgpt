@@ -1,22 +1,43 @@
 import streamlit as st
-import openai
+import requests
 
-openai.api_key = "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"
+# Chave da API Gemini 2.0 Flash
+API_KEY = "AIzaSyB5gvHKwrUX1XXNxZ2CfOAI-NE1UPX3CB8"
 
-st.set_page_config(page_title="ChatGPT Simples", page_icon="💬", layout="wide")
-st.markdown("<h1 style='text-align: center;'>Chat com GPT-3.5</h1>", unsafe_allow_html=True)
+def gerar_resposta(texto_usuario):
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={API_KEY}"
+    headers = {"Content-Type": "application/json"}
+    data = {
+        "contents": [
+            {
+                "parts": [
+                    {"text": texto_usuario}
+                ]
+            }
+        ]
+    }
+    response = requests.post(url, headers=headers, json=data)
+    if response.status_code == 200:
+        resposta = response.json()
+        return resposta["candidates"][0]["content"]["parts"][0]["text"]
+    else:
+        return f"Erro: {response.status_code} - {response.text}"
 
-prompt = st.text_input("Digite sua pergunta e pressione Enter:")
+st.set_page_config(page_title="Chat Gemini", layout="wide")
+st.title("Chat com Gemini 2.0 Flash")
 
-if prompt:
-    st.session_state["mensagens"] = st.session_state.get("mensagens", []) + [{"role": "user", "content": prompt}]
-    try:
-        resposta = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=st.session_state["mensagens"]
-        )
-        msg = resposta.choices[0].message["content"]
-        st.session_state["mensagens"].append({"role": "assistant", "content": msg})
-        st.markdown(f"**Resposta:** {msg}")
-    except Exception as e:
-        st.error(f"Erro: {e}")
+if "historico" not in st.session_state:
+    st.session_state.historico = []
+
+pergunta = st.text_input("Digite sua pergunta", "")
+if pergunta:
+    st.session_state.historico.append({"pergunta": pergunta})
+    resposta = gerar_resposta(pergunta)
+    st.session_state.historico[-1]["resposta"] = resposta
+    st.experimental_rerun()
+
+for item in st.session_state.historico[::-1]:
+    st.markdown(f"**Você:** {item['pergunta']}")
+    st.markdown(f"**Gemini:** {item['resposta']}")
+    st.markdown("---")
+    
